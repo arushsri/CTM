@@ -1,0 +1,91 @@
+# services:
+#   backend:
+#     build: ./asmp_backend
+#     container_name: asmp_backend
+#     restart: always
+#     env_file:
+#       - ./asmp_backend/.env
+#     depends_on:
+#       - db
+#     ports:
+#       - "8001:8001"
+
+#   frontend:
+#     build: ./asmp_frontend
+#     container_name: asmp_frontend
+#     restart: always
+#     ports:
+#       - "3000:3000"
+#     depends_on:
+#       - backend
+
+#   db:
+#     image: postgres:15
+#     container_name: asmp_db
+#     restart: always
+#     environment:
+#       POSTGRES_DB: asmp_db
+#       POSTGRES_USER: asmp_user
+#       POSTGRES_PASSWORD: arush
+#     volumes:
+#       - pgdata:/var/lib/postgresql/data
+#       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+#     ports:
+#       - "5432:5432"
+
+# volumes:
+#   pgdata:
+
+version: '3.8'
+
+services:
+  backend:
+    build: ./asmp_backend
+    container_name: asmp_backend
+    restart: always
+    env_file:
+      - ./asmp_backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8001/ || exit 1"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+    ports:
+      - "8001:8001"
+
+  frontend:
+    build: ./asmp_frontend
+    container_name: asmp_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15  # ✅ Using the official PostgreSQL image
+    container_name: asmp_db
+    restart: always
+    environment:
+      POSTGRES_DB: asmp_db
+      POSTGRES_USER: asmp_user
+      POSTGRES_PASSWORD: arush
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "asmp_user"]
+      interval: 5s
+      retries: 5
+
+volumes:
+  pgdata:

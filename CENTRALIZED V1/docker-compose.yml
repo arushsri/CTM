@@ -1,0 +1,39 @@
+services:
+  backend:
+    build: ./centralised_website
+    container_name: centralised_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - ./centralised_website:/app
+
+  frontend:
+    build: ./centralized_frontend
+    container_name: centralized_frontend
+    ports:
+      - "4173:4173"
+    depends_on:
+      - backend
+    volumes:
+      - ./centralized_frontend:/app
+      - /app/node_modules
+
+  db:
+    image: postgres:15
+    container_name: centralised_db
+    restart: always
+    environment:
+      POSTGRES_DB: centralised_db
+      POSTGRES_USER: centralised_user
+      POSTGRES_PASSWORD: arush
+    ports:
+      - "5433:5432"  # Changed host port to 5433 to avoid conflict
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
